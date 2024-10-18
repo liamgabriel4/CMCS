@@ -1,0 +1,125 @@
+﻿@model CMCS.Models.Claim
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Submit Claim</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h2 {
+            color: #333;
+        }
+
+        form {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        div {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        textarea,
+        input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        input[type="number"] {
+            -moz-appearance: textfield; /* Removes default number input styles in Firefox */
+        }
+
+            input[type="number"]::-webkit-inner-spin-button,
+            input[type="number"]::-webkit-outer-spin-button {
+                -webkit-appearance: none;
+                margin: 0;
+            }
+
+        textarea {
+            height: 100px;
+            resize: vertical; /* Allow vertical resizing only */
+        }
+
+        button {
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 10px 15px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+
+            button:hover {
+                background-color: #0056b3;
+            }
+
+        .text-danger {
+            color: #d9534f;
+        }
+    </style>
+</head>
+<body>
+    <h2>Submit Your Claim</h2>
+    <form method="post" enctype="multipart/form-data" action="/Claims/SubmitClaim">
+        <div asp-validation-summary="All" class="text-danger"></div>
+
+        <div>
+            <label>Lecturer Name:</label>
+            <input type="text" name="LecturerName" value="@Model?.LecturerName" placeholder="Enter your name" required />
+        </div>
+
+        <div>
+            <label>Hours Worked:</label>
+            <input type="number" name="HoursWorked" value="@Model?.HoursWorked" step="0.1" placeholder="" required />
+        </div>
+
+        <div>
+            <label>Hourly Rate:</label>
+            <input type="number" name="HourlyRate" value="@Model?.HourlyRate" step="0.01" placeholder="" required />
+        </div>
+
+        <div>
+            <label>Additional Notes:</label>
+            <textarea name="Notes" placeholder="Any additional notes...">@Model?.Notes</textarea>
+        </div>
+
+        <div>
+            <label>Upload Supporting Document:</label>
+            <input type="file" name="document" required />
+            <div class="text-danger">
+                @if (ViewData.ModelState.ContainsKey("document") && ViewData.ModelState["document"].Errors.Count > 0)
+                {
+                    <span>@ViewData.ModelState["document"].Errors[0].ErrorMessage</span>
+                }
+            </div>
+        </div>
+
+        <button type="submit">Submit Claim</button>
+    </form>
+</body>
+</html>
+@* //Digital TechJoint (2022). ASP.NET Identity - User Registration, Login and Log-out. [online] YouTube. Available at: https://www.youtube.com/watch?v=ghzvSROMo_M [Accessed 9 Oct. 2024].
+    //Digital TechJoint (2022). ASP.NET MVC - How To Implement Role Based Authorization. YouTube. Available at: https://www.youtube.com/watch?v=qvsWwwq2ynE [Accessed 10 Oct. 2024].*@

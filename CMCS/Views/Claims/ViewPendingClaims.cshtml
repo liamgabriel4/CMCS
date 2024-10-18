@@ -1,0 +1,133 @@
+﻿@model IEnumerable<CMCS.Models.Claim>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pending Claims for Approval</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h2 {
+            color: #333;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ccc;
+        }
+
+        th {
+            background-color: #007BFF;
+            color: white;
+        }
+
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        a {
+            color: #007BFF;
+            text-decoration: none;
+        }
+
+            a:hover {
+                text-decoration: underline;
+            }
+
+        button {
+            background-color: #28a745; /* Green for approve */
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 12px;
+            cursor: pointer;
+            margin-right: 5px;
+            transition: background-color 0.3s;
+        }
+
+            button[type="submit"]:nth-of-type(2) {
+                background-color: #dc3545; /* Red for reject */
+            }
+
+            button:hover {
+                opacity: 0.9;
+            }
+
+            button[type="submit"]:nth-of-type(2):hover {
+                opacity: 0.9;
+            }
+
+        .text-danger {
+            color: #d9534f;
+        }
+    </style>
+</head>
+<body>
+    <h2>Pending Claims for Approval</h2>
+
+    @if (Model != null && Model.Count() > 0)
+    {
+        <table>
+            <thead>
+                <tr>
+                    <th>Lecturer Name</th>
+                    <th>Hours Worked</th>
+                    <th>Hourly Rate</th>
+                    <th>Notes</th>
+                    <th>Document</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var claim in Model)
+                {
+                    <tr>
+                        <td>@claim.LecturerName</td>
+                        <td>@claim.HoursWorked</td>
+                        <td>@claim.HourlyRate</td>
+                        <td>@claim.Notes</td>
+                        <td>
+                            <a href="@claim.DocumentPath" target="_blank">View Document</a>
+                        </td>
+                        <td>
+                            <form method="post" action="/Claims/ApproveClaim" style="display:inline-block;">
+                                <input type="hidden" name="id" value="@claim.ClaimId" />
+                                <button type="submit">Approve</button>
+                            </form>
+
+                            <form method="post" action="/Claims/RejectClaim" style="display:inline-block;">
+                                <input type="hidden" name="id" value="@claim.ClaimId" />
+                                <button type="submit">Reject</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <p>No pending claims to display.</p>
+    }
+</body>
+</html>
+@* //Digital TechJoint (2022). ASP.NET Identity - User Registration, Login and Log-out. [online] YouTube. Available at: https://www.youtube.com/watch?v=ghzvSROMo_M [Accessed 9 Oct. 2024].
+    //Digital TechJoint (2022). ASP.NET MVC - How To Implement Role Based Authorization. YouTube. Available at: https://www.youtube.com/watch?v=qvsWwwq2ynE [Accessed 10 Oct. 2024].*@

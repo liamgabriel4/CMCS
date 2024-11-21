@@ -7,6 +7,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Text;
 
 public class ClaimsController : Controller
 {
@@ -28,52 +29,54 @@ public class ClaimsController : Controller
         return View(); // Returns the view for submitting a claim
     }
 
-    // POST: Handle the submission of a claim
+    //Part 3
     [HttpPost]
     public async Task<IActionResult> SubmitClaim(Claim claim, IFormFile document)
     {
-        // Check if a document has been uploaded
         if (document != null && document.Length > 0)
         {
-            var fileExtension = Path.GetExtension(document.FileName).ToLower(); // Get the file extension
-            // Validate the file extension
+            var fileExtension = Path.GetExtension(document.FileName).ToLower();
             if (!_allowedExtensions.Contains(fileExtension))
             {
                 ModelState.AddModelError("document", "Invalid file type. Only PDF, DOCX, and XLSX files are allowed.");
-                return View(claim); // Return to the view with an error message
+                return View(claim);
             }
 
-            // Define the path for uploads
             var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads");
-            // Create the uploads directory if it doesn't exist
             if (!Directory.Exists(uploadsPath))
             {
                 Directory.CreateDirectory(uploadsPath);
             }
 
-            // Define the file path where the document will be saved
             var filePath = Path.Combine(uploadsPath, document.FileName);
-            // Save the uploaded document to the file system
             using (var stream = new FileStream(filePath, FileMode.Create))
             {
-                await document.CopyToAsync(stream); // Asynchronously copy the file to the specified path
+                await document.CopyToAsync(stream);
             }
 
-            // Store the document path in the claim object
             claim.DocumentPath = $"/uploads/{document.FileName}";
         }
         else
         {
-            ModelState.AddModelError("document", "Please upload a supporting document."); // Error if no document was uploaded
-            return View(claim); // Return to the view with an error message
+            ModelState.AddModelError("document", "Please upload a supporting document.");
+            return View(claim);
         }
 
-        // Add the claim to the database and save changes
+        // Automatically reject claims exceeding salary limit
+        const decimal salaryLimit = 5000m; // Example limit
+        if (claim.TotalSalary > salaryLimit)
+        {
+            claim.Status = "Rejected";
+            claim.Notes = "Claim rejected due to exceeding salary limits.";
+        }
+
+        claim.LecturerId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value; // Set LecturerId
         _dbContext.Claims.Add(claim);
         await _dbContext.SaveChangesAsync();
 
-        return RedirectToAction("ClaimSubmitted"); // Redirect to the confirmation page after submission
+        return RedirectToAction("ClaimSubmitted");
     }
+
 
     // GET: Display the claim submission confirmation page
     public IActionResult ClaimSubmitted()
@@ -154,24 +157,19 @@ public class ClaimsController : Controller
         return RedirectToAction("ViewPendingClaims"); // Redirect back to the pending claims view
     }
 
-    // GET: Track all claims (for all users with specific roles)
-    [Authorize(Roles = "Co-ordinator,Manager,Lecturer")] // Requires the user to have one of the specified roles
+    //Part 3
+    [Authorize(Roles = "Lecturer")] // Ensures only Lecturers can access this view
     [HttpGet]
     public async Task<IActionResult> TrackClaims()
     {
-        try
-        {
-            // Retrieve all claims from the database
-            var allClaims = await _dbContext.Claims.ToListAsync();
-            return View(allClaims); // Return the view with the list of all claims
-        }
-        catch (Exception ex)
-        {
-            ModelState.AddModelError(string.Empty, "An error occurred while fetching the claims. Please try again later.");
-            Console.WriteLine(ex.Message); // Log the error message
-            return View("Error"); // Return an error view if something goes wrong
-        }
+        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value; // Get logged-in user ID
+        var myClaims = await _dbContext.Claims
+            .Where(c => c.LecturerId == userId)
+            .ToListAsync();
+
+        return View(myClaims); // Display only claims submitted by the logged-in user
     }
+
 
     // POST: Delete a claim based on its ID
     [Authorize(Roles = "Co-ordinator,Manager")] // Requires the user to have the specified roles
@@ -190,6 +188,69 @@ public class ClaimsController : Controller
             ModelState.AddModelError(string.Empty, "Claim not found."); // Error if the claim is not found
             return View("Error"); // Return an error view if the claim is not found
         }
+    }
+
+    //Part 3
+    [Authorize(Roles = "HR,Manager")] // Restrict access to HR and Manager roles
+    [HttpGet]
+    public async Task<IActionResult> HRViewClaims()
+    {
+        var allClaims = await _dbContext.Claims.ToListAsync(); // Fetch all claims
+        return View(allClaims); // Display all claims
+    }
+
+    [Authorize(Roles = "HR,Manager")] // Restrict access to HR and Manager roles
+    [HttpGet]
+    public async Task<IActionResult> GenerateApprovedClaimsReport()
+    {
+        var approvedClaims = await _dbContext.Claims
+            .Where(c => c.Status == "Approved")
+            .ToListAsync();
+
+        // Simulating report generation as a CSV
+        var csvData = "ClaimId, LecturerName, HoursWorked, HourlyRate, TotalSalary, SubmissionDate\n";
+        foreach (var claim in approvedClaims)
+        {
+            csvData += $"{claim.ClaimId}, {claim.LecturerName}, {claim.HoursWorked}, {claim.HourlyRate}, {claim.TotalSalary}, {claim.SubmissionDate}\n";
+        }
+
+        var reportPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/reports", "ApprovedClaimsReport.csv");
+        if (!Directory.Exists(Path.GetDirectoryName(reportPath)))
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(reportPath));
+        }
+
+        await System.IO.File.WriteAllTextAsync(reportPath, csvData); // Save the CSV file
+
+        TempData["ReportPath"] = "/reports/ApprovedClaimsReport.csv"; // Save report path for download
+        return View("HRViewClaims"); // Redirect to HR view
+    }
+
+    // HR View: Displays all claims and generates a report of approved claims
+    [Authorize(Roles = "HR")]
+    public async Task<IActionResult> HRView()
+    {
+        var allClaims = await _dbContext.Claims.ToListAsync();
+        return View(allClaims);
+    }
+
+    [Authorize(Roles = "HR")]
+    public async Task<IActionResult> DownloadReport()
+    {
+        var approvedClaims = await _dbContext.Claims
+            .Where(c => c.Status == "Approved")
+            .ToListAsync();
+
+        var csvBuilder = new StringBuilder();
+        csvBuilder.AppendLine("ClaimId, LecturerName, HoursWorked, HourlyRate, TotalSalary, SubmissionDate");
+
+        foreach (var claim in approvedClaims)
+        {
+            csvBuilder.AppendLine($"{claim.ClaimId}, {claim.LecturerName}, {claim.HoursWorked}, {claim.HourlyRate}, {claim.TotalSalary}, {claim.SubmissionDate.ToString("yyyy-MM-dd")}");
+        }
+
+        var reportBytes = Encoding.UTF8.GetBytes(csvBuilder.ToString());
+        return File(reportBytes, "text/csv", "ApprovedClaimsReport.csv");
     }
     //Digital TechJoint (2022). ASP.NET Identity - User Registration, Login and Log-out. [online] YouTube. Available at: https://www.youtube.com/watch?v=ghzvSROMo_M [Accessed 9 Oct. 2024].
     //Digital TechJoint (2022). ASP.NET MVC - How To Implement Role Based Authorization. YouTube. Available at: https://www.youtube.com/watch?v=qvsWwwq2ynE [Accessed 10 Oct. 2024].

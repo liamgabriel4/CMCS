@@ -1,0 +1,39 @@
+﻿@model IEnumerable<CMCS.Models.Claim>
+
+@{
+    ViewData["Title"] = "HR View";
+}
+
+<h1>HR View: All Claims</h1>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Claim ID</th>
+            <th>Lecturer Name</th>
+            <th>Hours Worked</th>
+            <th>Hourly Rate</th>
+            <th>Total Salary</th>
+            <th>Status</th>
+            <th>Submission Date</th>
+            <th>Notes</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var claim in Model)
+        {
+            <tr>
+                <td>@claim.ClaimId</td>
+                <td>@claim.LecturerName</td>
+                <td>@claim.HoursWorked</td>
+                <td>@claim.HourlyRate</td>
+                <td>@claim.TotalSalary</td>
+                <td>@claim.Status</td>
+                <td>@claim.SubmissionDate.ToString("yyyy-MM-dd")</td>
+                <td>@claim.Notes</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<a class="btn btn-primary" href="@Url.Action("DownloadReport", "Claims")">Download Approved Claims Report</a>

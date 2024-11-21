@@ -9,6 +9,7 @@
 <table class="table">
     <thead>
         <tr>
+            <!-- Define table headers for claim details -->
             <th>Claim ID</th>
             <th>Lecturer Name</th>
             <th>Hours Worked</th>
@@ -23,6 +24,7 @@
         @foreach (var claim in Model)
         {
             <tr>
+                <!-- Display each claim's details -->
                 <td>@claim.ClaimId</td>
                 <td>@claim.LecturerName</td>
                 <td>@claim.HoursWorked</td>
@@ -36,4 +38,5 @@
     </tbody>
 </table>
 
+<!-- Button to download a report of approved claims -->
 <a class="btn btn-primary" href="@Url.Action("DownloadReport", "Claims")">Download Approved Claims Report</a>

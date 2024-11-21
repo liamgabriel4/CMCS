@@ -240,26 +240,37 @@ public class ClaimsController : Controller
     [Authorize(Roles = "HR")]
     public async Task<IActionResult> HRView()
     {
+        // Retrieve all claims from the database
         var allClaims = await _dbContext.Claims.ToListAsync();
+
+        // Pass the claims data to the HR view
         return View(allClaims);
     }
 
     [Authorize(Roles = "HR")]
     public async Task<IActionResult> DownloadReport()
     {
+        // Filter the claims to only include those with the status "Approved"
         var approvedClaims = await _dbContext.Claims
             .Where(c => c.Status == "Approved")
             .ToListAsync();
 
+        // Initialize a StringBuilder to construct the CSV content
         var csvBuilder = new StringBuilder();
+
+        // Add the CSV header row
         csvBuilder.AppendLine("ClaimId, LecturerName, HoursWorked, HourlyRate, TotalSalary, SubmissionDate");
 
+        // Add data rows for each approved claim
         foreach (var claim in approvedClaims)
         {
             csvBuilder.AppendLine($"{claim.ClaimId}, {claim.LecturerName}, {claim.HoursWorked}, {claim.HourlyRate}, {claim.TotalSalary}, {claim.SubmissionDate.ToString("yyyy-MM-dd")}");
         }
 
+        // Convert the CSV content to a byte array using UTF-8 encoding
         var reportBytes = Encoding.UTF8.GetBytes(csvBuilder.ToString());
+
+        // Return the generated file as a downloadable response
         return File(reportBytes, "text/csv", "ApprovedClaimsReport.csv");
     }
     //Digital TechJoint (2022). ASP.NET Identity - User Registration, Login and Log-out. [online] YouTube. Available at: https://www.youtube.com/watch?v=ghzvSROMo_M [Accessed 9 Oct. 2024].

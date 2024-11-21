@@ -4,36 +4,49 @@
     ViewData["Title"] = "HR View";
 }
 
-<h1>HR View: All Claims</h1>
+<div class="container mt-5">
+    <h1 class="mb-4 text-center">HR View: All Claims</h1>
 
-<table class="table">
-    <thead>
-        <tr>
-            <th>Claim ID</th>
-            <th>Lecturer Name</th>
-            <th>Hours Worked</th>
-            <th>Hourly Rate</th>
-            <th>Total Salary</th>
-            <th>Status</th>
-            <th>Submission Date</th>
-            <th>Notes</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var claim in Model)
-        {
+    <table class="table table-bordered table-striped table-hover">
+        <thead class="thead-dark">
             <tr>
-                <td>@claim.ClaimId</td>
-                <td>@claim.LecturerName</td>
-                <td>@claim.HoursWorked</td>
-                <td>@claim.HourlyRate</td>
-                <td>@claim.TotalSalary</td>
-                <td>@claim.Status</td>
-                <td>@claim.SubmissionDate.ToString("yyyy-MM-dd")</td>
-                <td>@claim.Notes</td>
+                <th scope="col">Claim ID</th>
+                <th scope="col">Lecturer Name</th>
+                <th scope="col">Hours Worked</th>
+                <th scope="col">Hourly Rate</th>
+                <th scope="col">Total Salary</th>
+                <th scope="col">Status</th>
+                <th scope="col">Submission Date</th>
+                <th scope="col">Notes</th>
             </tr>
-        }
-    </tbody>
-</table>
+        </thead>
+        <tbody>
+            @foreach (var claim in Model)
+            {
+                <tr>
+                    <td>@claim.ClaimId</td>
+                    <td>@claim.LecturerName</td>
+                    <td>@claim.HoursWorked</td>
+                    <td>@claim.HourlyRate.ToString("C")</td> <!-- Format as currency -->
+                    <td>@claim.TotalSalary.ToString("C")</td> <!-- Format as currency -->
+                    <td>
+                        <span class="badge
+                            @(claim.Status == "Approved" ? "badge-success" :
+                            claim.Status == "Rejected" ? "badge-danger" :
+                            "badge-warning")">
+                            @claim.Status
+                        </span>
+                    </td>
+                    <td>@claim.SubmissionDate.ToString("yyyy-MM-dd")</td>
+                    <td>@claim.Notes</td>
+                </tr>
+            }
+        </tbody>
+    </table>
 
-<a class="btn btn-primary" href="@Url.Action("DownloadReport", "Claims")">Download Approved Claims Report</a>
+    <div class="d-flex justify-content-center mt-4">
+        <a class="btn btn-primary btn-lg" href="@Url.Action("DownloadReport", "Claims")">
+            <i class="fas fa-file-download"></i> Download Approved Claims Report
+        </a>
+    </div>
+</div>

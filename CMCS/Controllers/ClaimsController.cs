@@ -33,47 +33,57 @@ public class ClaimsController : Controller
     [HttpPost]
     public async Task<IActionResult> SubmitClaim(Claim claim, IFormFile document)
     {
+        // Validate and process the uploaded document
         if (document != null && document.Length > 0)
         {
+            // Check the file extension to ensure only allowed types are uploaded
             var fileExtension = Path.GetExtension(document.FileName).ToLower();
             if (!_allowedExtensions.Contains(fileExtension))
             {
                 ModelState.AddModelError("document", "Invalid file type. Only PDF, DOCX, and XLSX files are allowed.");
-                return View(claim);
+                return View(claim); // Return the view with validation error
             }
 
+            // Define the directory path for storing uploaded files
             var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads");
             if (!Directory.Exists(uploadsPath))
             {
-                Directory.CreateDirectory(uploadsPath);
+                Directory.CreateDirectory(uploadsPath); // Create the directory if it doesn't exist
             }
 
+            // Save the uploaded file to the specified directory
             var filePath = Path.Combine(uploadsPath, document.FileName);
             using (var stream = new FileStream(filePath, FileMode.Create))
             {
-                await document.CopyToAsync(stream);
+                await document.CopyToAsync(stream); // Asynchronously copy the file content
             }
 
+            // Set the path of the uploaded document in the claim
             claim.DocumentPath = $"/uploads/{document.FileName}";
         }
         else
         {
+            // Add a validation error if no document is uploaded
             ModelState.AddModelError("document", "Please upload a supporting document.");
             return View(claim);
         }
 
-        // Automatically reject claims exceeding salary limit
+        // Define a salary limit for automatic claim rejection
         const decimal salaryLimit = 5000m; // Example limit
         if (claim.TotalSalary > salaryLimit)
         {
-            claim.Status = "Rejected";
-            claim.Notes = "Claim rejected due to exceeding salary limits.";
+            claim.Status = "Rejected"; // Mark the claim as rejected
+            claim.Notes = "Claim rejected due to exceeding salary limits."; // Add a note explaining the rejection
         }
 
-        claim.LecturerId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value; // Set LecturerId
-        _dbContext.Claims.Add(claim);
-        await _dbContext.SaveChangesAsync();
+        // Set the LecturerId to the current user's unique identifier
+        claim.LecturerId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
 
+        // Add the claim to the database context for saving
+        _dbContext.Claims.Add(claim);
+        await _dbContext.SaveChangesAsync(); // Persist changes to the database
+
+        // Redirect to the ClaimSubmitted confirmation view
         return RedirectToAction("ClaimSubmitted");
     }
 
